@@ -456,6 +456,15 @@ var FormState;
 })(FormState || (FormState = {}));
 var pendingFormSubmit = void 0;
 var formState = FormState.Idle;
+function setFormPending(method, encType, data, action2) {
+  pendingFormSubmit = {
+    method,
+    encType,
+    data,
+    action: action2
+  };
+  formState = method.toLowerCase() === "get" ? FormState.PendingGet : FormState.Pending;
+}
 function setFormRedirected() {
   formState = FormState.Redirected;
 }
@@ -492,7 +501,7 @@ function RemixEntry({
     componentDidCatchEmulator: entryComponentDidCatchEmulator
   });
   let {
-    action,
+    action: action2,
     location,
     matches,
     routeData,
@@ -632,7 +641,7 @@ function RemixEntry({
     component: RemixRootDefaultErrorBoundary,
     error: maybeServerRenderError
   }, /* @__PURE__ */ import_react3.default.createElement(import_react_router_dom2.Router, {
-    action,
+    action: action2,
     location,
     navigator,
     static: staticProp
@@ -782,6 +791,122 @@ function Routes() {
   } = useRemixEntryContext();
   let element = (0, import_react_router_dom2.useRoutes)(clientRoutes);
   return element;
+}
+var Form = /* @__PURE__ */ import_react3.default.forwardRef((_a, forwardedRef) => {
+  var _b = _a, {
+    forceRefresh = false,
+    replace = false,
+    method = "get",
+    action: action2 = ".",
+    encType = "application/x-www-form-urlencoded",
+    onSubmit
+  } = _b, props = __objRest(_b, [
+    "forceRefresh",
+    "replace",
+    "method",
+    "action",
+    "encType",
+    "onSubmit"
+  ]);
+  let submit = useSubmit();
+  let formMethod = method.toLowerCase() === "get" ? "get" : "post";
+  let formAction = useFormAction(action2);
+  function handleSubmit(event) {
+    onSubmit && onSubmit(event);
+    if (event.defaultPrevented)
+      return;
+    event.preventDefault();
+    submit(event.currentTarget, {
+      method,
+      replace
+    });
+  }
+  return /* @__PURE__ */ import_react3.default.createElement("form", _extends({
+    ref: forwardedRef,
+    method: formMethod,
+    action: formAction,
+    encType,
+    onSubmit: forceRefresh ? void 0 : handleSubmit
+  }, props));
+});
+function useFormAction(action2 = ".") {
+  let path = (0, import_react_router_dom2.useResolvedPath)(action2);
+  return path.pathname + path.search;
+}
+function useSubmit() {
+  let navigate = (0, import_react_router_dom2.useNavigate)();
+  let defaultAction = useFormAction();
+  return (target, options = {}) => {
+    let method;
+    let action2;
+    let encType;
+    let formData;
+    if (isFormElement(target)) {
+      method = options.method || target.method;
+      action2 = options.action || target.action;
+      encType = options.encType || target.enctype;
+      formData = new FormData(target);
+    } else if (isButtonElement(target) || isInputElement(target) && (target.type === "submit" || target.type === "image")) {
+      let form = target.form;
+      if (form == null) {
+        throw new Error(`Cannot submit a <button> without a <form>`);
+      }
+      method = options.method || target.formMethod || form.method;
+      action2 = options.action || target.formAction || form.action;
+      encType = options.encType || target.formEnctype || form.enctype;
+      formData = new FormData(form);
+      if (target.name) {
+        formData.set(target.name, target.value);
+      }
+    } else {
+      if (isHtmlElement(target)) {
+        throw new Error(`Cannot submit element that is not <form>, <button>, or <input type="submit|image">`);
+      }
+      method = options.method || "get";
+      action2 = options.action || defaultAction;
+      encType = options.encType || "application/x-www-form-urlencoded";
+      if (target instanceof FormData) {
+        formData = target;
+      } else {
+        formData = new FormData();
+        if (target instanceof URLSearchParams) {
+          for (let [name, value] of target) {
+            formData.set(name, value);
+          }
+        } else if (target != null) {
+          for (let name of Object.keys(target)) {
+            formData.set(name, target[name]);
+          }
+        }
+      }
+    }
+    setFormPending(method, encType, formData, action2);
+    let url = new URL(action2, `${window.location.protocol}//${window.location.host}`);
+    if (method.toLowerCase() === "get") {
+      for (let [name, value] of formData) {
+        if (typeof value === "string") {
+          url.searchParams.set(name, value);
+        } else {
+          throw new Error(`Cannot submit binary form data using GET`);
+        }
+      }
+    }
+    navigate(url.pathname + url.search, {
+      replace: options.replace
+    });
+  };
+}
+function isHtmlElement(object) {
+  return object != null && typeof object.tagName === "string";
+}
+function isButtonElement(object) {
+  return isHtmlElement(object) && object.tagName.toLowerCase() === "button";
+}
+function isFormElement(object) {
+  return isHtmlElement(object) && object.tagName.toLowerCase() === "form";
+}
+function isInputElement(object) {
+  return isHtmlElement(object) && object.tagName.toLowerCase() === "input";
 }
 function useRouteData() {
   return useRemixRouteContext().data;
@@ -935,16 +1060,39 @@ function FourOhFour() {
 // route-module:/Users/matthova/Sites/remix-cookie-check/app/routes/index.tsx
 var routes_exports = {};
 __export(routes_exports, {
+  action: () => action,
   default: () => Index,
   links: () => links2,
   loader: () => loader2,
   meta: () => meta2
 });
+var import_node2 = __toModule(require("@remix-run/node"));
 
 // app/styles/index.css
 var styles_default = "/build/_assets/index-ARBOEKH2.css";
 
+// app/utils/session.server.ts
+var import_node = __toModule(require("@remix-run/node"));
+var secret = "not-at-all-secret";
+var rootStorage = (0, import_node.createCookieSessionStorage)({
+  cookie: {
+    name: "__session",
+    secrets: [secret],
+    sameSite: "lax",
+    path: "/"
+  }
+});
+
 // route-module:/Users/matthova/Sites/remix-cookie-check/app/routes/index.tsx
+var action = async ({request}) => {
+  var _a;
+  const session = await rootStorage.getSession((_a = request.headers.get("Cookie")) != null ? _a : void 0);
+  session.set("foo", "bar");
+  const cookie = await rootStorage.commitSession(session);
+  return (0, import_node2.redirect)("/", {
+    headers: {"Set-Cookie": cookie}
+  });
+};
 var meta2 = () => {
   return {
     title: "Remix Starter",
@@ -954,16 +1102,23 @@ var meta2 = () => {
 var links2 = () => {
   return [{rel: "stylesheet", href: styles_default}];
 };
-var loader2 = async () => {
-  return {message: "this is awesome \u{1F60E}"};
+var loader2 = async ({request}) => {
+  const cookie = request.headers.get("Cookie");
+  const session = await rootStorage.getSession(cookie);
+  const foo = session.get("foo");
+  return {foo};
 };
 function Index() {
-  let data = useRouteData();
-  return /* @__PURE__ */ React.createElement("div", {
-    style: {textAlign: "center", padding: 20}
-  }, /* @__PURE__ */ React.createElement("h2", null, "Welcome to Remix!"), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("a", {
-    href: "https://remix.run/dashboard/docs"
-  }, "Check out the docs"), " to get started."), /* @__PURE__ */ React.createElement("p", null, "Message from the loader: ", data.message));
+  var _a;
+  const data = useRouteData();
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", null, "foo:", (_a = data.foo) != null ? _a : "not found"), /* @__PURE__ */ React.createElement(Form, {
+    method: "post"
+  }, /* @__PURE__ */ React.createElement("input", {
+    name: "timezone",
+    placeholder: "TIMEZONE"
+  }), /* @__PURE__ */ React.createElement("button", {
+    type: "submit"
+  }, "SUBMIT")));
 }
 
 // <stdin>
