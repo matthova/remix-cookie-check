@@ -1,0 +1,39 @@
+{
+  "version": "c75abad0",
+  "entry": {
+    "module": "/build/entry.client-5K3E3TJD.js",
+    "imports": [
+      "/build/_shared/chunk-YORHCUDC.js",
+      "/build/_shared/chunk-ILL5L3EX.js",
+      "/build/_shared/chunk-WMTUB2ZO.js"
+    ]
+  },
+  "routes": {
+    "root": {
+      "id": "root",
+      "path": "/",
+      "module": "/build/root-X34V3XH7.js",
+      "hasAction": false,
+      "hasLoader": true
+    },
+    "routes/404": {
+      "id": "routes/404",
+      "parentId": "root",
+      "path": "*",
+      "caseSensitive": false,
+      "module": "/build/routes/404-EOED6ZHV.js",
+      "hasAction": false,
+      "hasLoader": false
+    },
+    "routes/index": {
+      "id": "routes/index",
+      "parentId": "root",
+      "path": "/",
+      "caseSensitive": false,
+      "module": "/build/routes/index-QA7O3DNK.js",
+      "hasAction": false,
+      "hasLoader": true
+    }
+  },
+  "url": "/build/manifest-C75ABAD0.js"
+}
